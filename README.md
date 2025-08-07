@@ -36,11 +36,13 @@ Analysis
 └── model.py            # Neural network combined with spectral analysis (data insufficient, still in progress)
 
 Denoise
+
 ├──cut_freq.py
 
 └──timedff.py
 
 Annotation
+
 ├──drawPerspective.py
 
 └──paint.html           
@@ -60,7 +62,7 @@ Annotation
 - Two features stand out in detection purpose: rms energy and middle frequency ratio (500Hz - 1100Hz), other features still need varify
 - in analyze_knocks: Decay time is excluded due because data accuracy is difficult to grasp，threshold coefficient can be modified to get proper decay time to separate defect voices
   ```python
-  Decay time (time for amplitude to drop to 10% of peak)
+  #Decay time (time for amplitude to drop to 10% of peak)
         peak_amplitude = np.max(np.abs(knock_segment))
         threshold = 0.2 * peak_amplitude
         above_threshold = np.where(np.abs(knock_segment) > threshold)[0]
@@ -193,11 +195,17 @@ Annotation
    
 ## Dependencies
 numpy==1.26.0
+
 opencv-python==4.9.0.80
+
 scipy==1.13.0
+
 pandas==2.2.1
+
 matplotlib==3.8.2
+
 scikit-learn==1.4.0
+
 tensorflow==2.15.0
 
 ## Appendix
