@@ -20,20 +20,29 @@ project-root/
 
 Analysis
 ├── attach.py           # Main image projection module
+
 ├── folder_test.py      # Folder processing (clustering + visualization)
+
 ├── folder_test_with_n.py  # Enhanced folder processing with autoencoder
+
 ├── plot.py             # Feature analysis and plotting
+
 ├── single_test.py      # Single WAV file analysis
+
 ├── test.py             # Multi-wall analysis
+
 ├── test_with_n.py      # Multi-wall analysis with autoencoder
+
 └── model.py            # Neural network combined with spectral analysis (data insufficient, still in progress)
 
 Denoise
 ├──cut_freq.py
+
 └──timedff.py
 
 Annotation
 ├──drawPerspective.py
+
 └──paint.html           
 
 
