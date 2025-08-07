@@ -53,6 +53,8 @@ Annotation
 
 ### 1. Audio Processing (`single_test.py`, `plot.py`)
 - Detects knocking sounds in WAV files
+  - First knock can be missed due to fan interrupt
+  - Additional knock caused by noise
 - Extracts acoustic features:
   - Duration, RMS energy, peak amplitude
   - Decay time, spectral centroid
@@ -70,11 +72,18 @@ Annotation
             decay_time = (above_threshold[-1] - above_threshold[0]) / sample_rate
         else:
             decay_time = 0
+
   
 - in analyze_knocks: increase height to exclude noise or decrease to include faint knocking
    ```python
   # Find the knocking sounds (peaks in amplitude)
     peaks, _ = find_peaks(np.abs(audio_data), height=0.05, distance=sample_rate * 0.5)
+- Samples:
+- <img width="1188" height="595" alt="截屏2025-08-07 16 22 39" src="https://github.com/user-attachments/assets/4bc7e4e4-3a1b-4ff1-b9b1-4506a1c37efa" />
+- <img width="1184" height="768" alt="截屏2025-08-07 16 23 05" src="https://github.com/user-attachments/assets/aebf8ea0-19df-4c86-a6e0-2df95d4f3d52" />
+- <img width="503" height="1238" alt="截屏2025-08-07 16 26 52" src="https://github.com/user-attachments/assets/5579bbb5-bd1b-46ba-bedc-43f1a836320f" />
+- Frequencies with magnitude > 500 is possible fan noise
+
 
 ### 2. Clustering Analysis (`folder_test.py`, `folder_test_with_n.py`)
 - Processes folders of WAV files
@@ -82,22 +91,37 @@ Annotation
   - KMeans
   - DBSCAN
   - Spectral Clustering
+  - GMM
+- Possible improvement:
+  - Refer to different clustering methods and balance them with different weights (e.g. DBSCAN for excluding unreasonable data，KMeans and GMM for reasonable boundaries
+  - Parameter optimization to determine the benchmark points of good and defect
 - Generates:
   - Cluster heatmaps (`plot.png`)
+  - <img width="1280" height="571" alt="dex" src="https://github.com/user-attachments/assets/1381693f-7d6b-46e8-a1d6-b554ced5e374" />
+
   - Feature scatter plots (`dim.png`)
+  - <img width="1000" height="700" alt="dim" src="https://github.com/user-attachments/assets/903564b1-849e-414f-a034-652c31d91baa" />
+
   - Cluster distribution reports
+  - <img width="437" height="657" alt="截屏2025-08-07 16 52 16" src="https://github.com/user-attachments/assets/43e20dd4-ec7f-4be1-93ae-d71ad9d48f3f" />
+
+
 
 ### 3. Building Projection (`attach.py`)
 - Projects wall analysis results onto building blueprint
 - Uses perspective transformation
 - Handles multiple wall segments with custom coordinates
 - Outputs final building image (`projected_building.jpg`)
+- ![projected_building](https://github.com/user-attachments/assets/09e3f40b-16e9-4dc5-a824-ba4d76d60520)
+
 
 ### 4. Advanced Feature Extraction (`*_with_n.py`)
 - Uses autoencoder for dimensionality reduction
 - 8-layer neural network architecture
 - Latent space feature extraction
 - Improved clustering separation
+- <img width="982" height="696" alt="截屏2025-08-07 17 09 00" src="https://github.com/user-attachments/assets/2707ae84-a629-443c-8b3c-51693e6e7348" />
+
 
 ## Usage Workflow
 
@@ -208,7 +232,7 @@ scikit-learn==1.4.0
 
 tensorflow==2.15.0
 
-## Appendix
+## Appendix 
 
 1. **model.py**
 
@@ -266,8 +290,14 @@ tensorflow==2.15.0
 
 2. Visualizations:
    - Model training history (accuracy/loss plots)
+   - <img width="1200" height="500" alt="training_history" src="https://github.com/user-attachments/assets/4109090e-e43c-48d0-bf31-65f5ffda90e4" />
+
    - Cluster heatmap
+   - <img width="1500" height="1000" alt="result" src="https://github.com/user-attachments/assets/31edbe98-bc9c-41c9-8ffa-b58e16bc3521" />
+
    - Feature distribution scatter plots
+   - <img width="1000" height="700" alt="dim" src="https://github.com/user-attachments/assets/51a4cc11-f9a3-460f-859b-a8d9fb6a25a3" />
+
 
 ---
 
@@ -300,7 +330,9 @@ Key Functions:
 Workflow:  
 1. Input: CSV with segment coordinates  
 2. Process: Reduce polygons to quadrilaterals  
-3. Output: New CSV + heatmap-overlaid building image  
+3. Output: New CSV + heatmap-overlaid building image
+   ![result 大](https://github.com/user-attachments/assets/bd0ad032-6e2e-4d30-9f3f-91b0cad6063d)
+
 
 ---
 
@@ -333,6 +365,11 @@ Workflow: Upload → Annotate → Export
 
 `timedff.py`
 A program that performs time-delay estimation and voice activity detection (VAD) on two audio signals recorded by two microphones. The program uses the cross-correlation method to estimate the time delay between the two signals, and then filters out events with a time delay less than a specified threshold.
+
+Methodology:
+
+<img width="714" height="336" alt="Methology" src="https://github.com/user-attachments/assets/11c362fd-ecd2-41fa-9a72-a6bd3df13130" />
+
 
 The main features of `timedff.py` include:
 
