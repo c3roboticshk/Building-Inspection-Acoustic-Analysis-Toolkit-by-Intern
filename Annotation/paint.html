@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片标注工具 - 精确坐标系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            min-width: 300px;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        .image-section {
+            flex: 3;
+            min-width: 700px;
+        }
+
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            border: 4px solid rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+            object-fit: contain;
+        }
+
+        .upload-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            color: white;
+            font-size: 1.1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #2193b0, #6dd5ed);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+
+        .btn-red {
+            background: linear-gradient(45deg, #d31027, #ea384d);
+        }
+
+        .btn-green {
+            background: linear-gradient(45deg, #56ab2f, #a8e063);
+        }
+
+        .btn-purple {
+            background: linear-gradient(45deg, #614385, #516395);
+        }
+
+        .btn-orange {
+            background: linear-gradient(45deg, #ff7e5f, #feb47b);
+        }
+
+        .coordinates {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .coordinates h3 {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .coordinates ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .coordinates li {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .coordinates li:last-child {
+            border-bottom: none;
+        }
+
+        .layers-container {
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .layer-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .layer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .layer-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .instructions {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .instructions h3 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .layer-image {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+
+        .status-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            z-index: 20;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+
+        .coordinate-system {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            z-index: 20;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .text-box {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            color: black;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: move;
+            max-width: 200px;
+            word-wrap: break-word;
+            z-index: 30;
+        }
+
+        .text-edit {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 14px; /* 默认字体大小 */
+        }
+
+        .text-delete {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 16px;
+            height: 16px;
+            background: #ff5252;
+            border-radius: 50%;
+            color: white;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 31;
+        }
+
+        .font-controls {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            display: flex;
+            gap: 5px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px;
+            border-radius: 4px;
+            z-index: 40;
+        }
+
+        .font-btn {
+            width: 24px;
+            height: 24px;
+            background: #2193b0;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .layer-name-input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+        }
+
+        @media (max-width: 1200px) {
+            .image-section {
+                min-width: 100%;
+            }
+
+            .panel {
+                min-width: 100%;
+            }
+
+            .image-container {
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .image-container {
+                height: 400px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>图片标注工具 - 精确坐标系统</h1>
+            <p class="subtitle">以图片左上角为原点(0,0)，像素为单位的精确标注系统</p>
+        </header>
+
+        <div class="main-content">
+            <div class="image-section">
+                <div class="image-container" id="imageContainer">
+                    <img id="mainImage" alt="主图片">
+                    <canvas id="layersCanvas" class="canvas-overlay"></canvas>
+                    <canvas id="overlayCanvas" class="canvas-overlay"></canvas>
+
+                    <div class="status-bar" id="statusBar">请上传图片</div>
+                    <div class="coordinate-system">坐标系统: (0,0) 在图片左上角</div>
+
+                    <div class="zoom-controls">
+                        <div class="zoom-btn" id="zoomIn">+</div>
+                        <div class="zoom-btn" id="zoomOut">-</div>
+                        <div class="zoom-btn" id="resetZoom">↺</div>
+                    </div>
+                </div>
+
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                <div class="upload-btn" id="uploadBtn">上传图片</div>
+
+                <div class="controls">
+                    <button id="startBtn" class="btn-green">开始标注</button>
+                    <button id="finishBtn" class="btn-purple" disabled>完成图层</button>
+                    <button id="clearBtn" class="btn-red" disabled>清除点</button>
+                    <button id="addImageBtn" class="btn-purple" disabled>添加图片到图层</button>
+                    <button id="addTextBtn" class="btn-purple">添加文本框</button>
+                    <button id="addArrowBtn" class="btn-purple">添加双向箭头</button>
+                    <button id="exportCsvBtn" class="btn-orange" disabled>导出CSV</button>
+                    <button id="exportImageBtn" class="btn-orange" disabled>导出标注图</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2 class="panel-title">坐标信息</h2>
+
+                <div class="coordinates">
+                    <h3>当前点坐标</h3>
+                    <ul id="coordinatesList"></ul>
+                </div>
+
+                <div class="coordinates">
+                    <h3>图层信息</h3>
+                    <div id="layerInfo">尚未创建图层</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2 class="panel-title">图层管理</h2>
+
+                <div class="layers-container" id="layersContainer">
+                    <p>尚未创建图层</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>使用说明</h3>
+            <ol>
+                <li>点击"上传图片"按钮选择一张本地图片</li>
+                <li>点击"开始标注"按钮在图片上标记点（至少3个点）</li>
+                <li>点击"完成图层"按钮生成多边形图层</li>
+                <li>点击"添加图片到图层"按钮为图层添加图片</li>
+                <li>可以创建多个图层，每个图层都可以添加图片</li>
+                <li>使用"清除点"按钮可以清除当前标记的点</li>
+                <li>使用右上角按钮可以缩放图片</li>
+                <li>使用"导出CSV"按钮导出所有图层坐标数据</li>
+                <li>使用"导出标注图"按钮导出带标注的图片</li>
+                <li><strong>坐标系统：以图片左上角为原点(0,0)，向右为X正方向，向下为Y正方向</strong></li>
+                <li><strong>改进：修复了导出图片问题，完整导出所有点坐标</strong></li>
+                <li><strong>新增：文本框和双向箭头功能，可调整文字大小</strong></li>
+            </ol>
+        </div>
+    </div>
+
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取DOM元素
+            const imageUpload = document.getElementById('imageUpload');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const mainImage = document.getElementById('mainImage');
+            const imageContainer = document.getElementById('imageContainer');
+            const overlayCanvas = document.getElementById('overlayCanvas');
+            const layersCanvas = document.getElementById('layersCanvas');
+            const overlayCtx = overlayCanvas.getContext('2d');
+            const layersCtx = layersCanvas.getContext('2d');
+            const startBtn = document.getElementById('startBtn');
+            const finishBtn = document.getElementById('finishBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const addImageBtn = document.getElementById('addImageBtn');
+            const addTextBtn = document.getElementById('addTextBtn');
+            const addArrowBtn = document.getElementById('addArrowBtn');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            const exportImageBtn = document.getElementById('exportImageBtn');
+            const coordinatesList = document.getElementById('coordinatesList');
+            const layersContainer = document.getElementById('layersContainer');
+            const statusBar = document.getElementById('statusBar');
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+            const resetZoomBtn = document.getElementById('resetZoom');
+            const layerInfo = document.getElementById('layerInfo');
+
+            // 状态变量
+            let isDrawing = false;
+            let points = [];
+            let layers = [];
+            let currentLayer = null;
+            let originalImage = null;
+            let scale = 1.0;
+            let offsetX = 0;
+            let offsetY = 0;
+            let startX = 0;
+            let startY = 0;
+            let isDragging = false;
+            let imageDisplayRect = { x: 0, y: 0, width: 0, height: 0 };
+
+            // 新增状态变量
+            let isAddingText = false;
+            let isAddingArrow = false;
+            let arrowStartPoint = null;
+            let textAnnotations = [];
+            let arrowAnnotations = [];
+            let activeTextBox = null;
+            let nextTextId = 1;
+            let nextArrowId = 1;
+            let dragStart = {x: 0, y: 0};
+            let isDraggingText = false;
+            let draggedTextId = null;
+
+            // 设置Canvas大小
+            function setCanvasSize() {
+                overlayCanvas.width = imageContainer.clientWidth;
+                overlayCanvas.height = imageContainer.clientHeight;
+                layersCanvas.width = imageContainer.clientWidth;
+                layersCanvas.height = imageContainer.clientHeight;
+                overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                layersCtx.clearRect(0, 0, layersCanvas.width, layersCanvas.height);
+                renderLayers();
+                renderAnnotations();
+            }
+
+            // 计算图片在容器中的实际位置
+            function calculateImageDisplayRect() {
+                if (!originalImage) return;
+
+                const containerWidth = imageContainer.clientWidth;
+                const containerHeight = imageContainer.clientHeight;
+
+                const imgRatio = originalImage.width / originalImage.height;
+                const containerRatio = containerWidth / containerHeight;
+
+                let displayWidth, displayHeight, displayX, displayY;
+
+                if (containerRatio > imgRatio) {
+                    // 容器更宽，图片高度等于容器高度
+                    displayHeight = containerHeight;
+                    displayWidth = originalImage.width * (containerHeight / originalImage.height);
+                    displayX = (containerWidth - displayWidth) / 2;
+                    displayY = 0;
+                } else {
+                    // 容器更高，图片宽度等于容器宽度
+                    displayWidth = containerWidth;
+                    displayHeight = originalImage.height * (containerWidth / originalImage.width);
+                    displayX = 0;
+                    displayY = (containerHeight - displayHeight) / 2;
+                }
+
+                imageDisplayRect = {
+                    x: displayX,
+                    y: displayY,
+                    width: displayWidth,
+                    height: displayHeight,
+                    scale: displayWidth / originalImage.width
+                };
+            }
+
+            // 上传按钮事件
+            uploadBtn.addEventListener('click', () => {
+                imageUpload.click();
+            });
+
+            imageUpload.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        mainImage.src = event.target.result;
+                        mainImage.style.display = 'block';
+                        originalImage = new Image();
+                        originalImage.src = event.target.result;
+
+                        originalImage.onload = () => {
+                            scale = 1.0;
+                            offsetX = 0;
+                            offsetY = 0;
+                            setCanvasSize();
+                            calculateImageDisplayRect();
+                            resetState();
+                            statusBar.textContent = '图片已加载，点击"开始标注"按钮';
+                        };
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            // 窗口大小变化时调整Canvas
+            window.addEventListener('resize', () => {
+                setCanvasSize();
+                calculateImageDisplayRect();
+                renderAll();
+            });
+
+            // 重置状态
+            function resetState() {
+                isDrawing = false;
+                points = [];
+                currentLayer = null;
+                layers = [];
+                layersContainer.innerHTML = '<p>尚未创建图层</p>';
+                coordinatesList.innerHTML = '';
+                layerInfo.innerHTML = '尚未创建图层';
+                textAnnotations = [];
+                arrowAnnotations = [];
+                activeTextBox = null;
+                isAddingText = false;
+                isAddingArrow = false;
+                arrowStartPoint = null;
+                updateButtonStates();
+                overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                layersCtx.clearRect(0, 0, layersCanvas.width, layersCanvas.height);
+                removeAllTextBoxes();
+            }
+
+            // 移除所有文本框
+            function removeAllTextBoxes() {
+                document.querySelectorAll('.text-box').forEach(box => box.remove());
+            }
+
+            // 更新按钮状态
+            function updateButtonStates() {
+                startBtn.disabled = !originalImage;
+                finishBtn.disabled = !isDrawing || points.length < 3;
+                clearBtn.disabled = !isDrawing || points.length === 0;
+                addImageBtn.disabled = layers.length === 0;
+                addTextBtn.disabled = !originalImage;
+                addArrowBtn.disabled = !originalImage;
+                exportCsvBtn.disabled = layers.length === 0;
+                exportImageBtn.disabled = layers.length === 0;
+            }
+
+            // 开始标注
+            startBtn.addEventListener('click', () => {
+                isDrawing = true;
+                isAddingText = false;
+                isAddingArrow = false;
+                points = [];
+                coordinatesList.innerHTML = '';
+                overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                updateButtonStates();
+                statusBar.textContent = '标注模式：点击图片添加点';
+            });
+
+            // 清除点
+            clearBtn.addEventListener('click', () => {
+                if (isDrawing) {
+                    points = [];
+                    coordinatesList.innerHTML = '';
+                    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                    updateButtonStates();
+                    statusBar.textContent = '已清除所有点，请重新标注';
+                }
+            });
+
+            // 完成图层
+            finishBtn.addEventListener('click', () => {
+                if (points.length >= 3) {
+                    // 创建新图层
+                    const layerId = 'layer-' + Date.now();
+                    currentLayer = {
+                        id: layerId,
+                        name: `segment_${layers.length + 1}`,
+                        points: [...points],
+                        image: null
+                    };
+                    layers.push(currentLayer);
+
+                    // 渲染图层
+                    renderLayers();
+
+                    // 更新图层信息
+                    layerInfo.innerHTML = `当前图层：${currentLayer.name}<br>包含 ${points.length} 个点`;
+
+                    // 重置点
+                    points = [];
+                    coordinatesList.innerHTML = '';
+                    isDrawing = false;
+                    updateButtonStates();
+                    statusBar.textContent = `图层 ${currentLayer.name} 已创建，可添加图片或创建新图层`;
+                }
+            });
+
+            // 添加图片到图层
+            addImageBtn.addEventListener('click', () => {
+                if (layers.length > 0) {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.style.display = 'none';
+
+                    input.onchange = (e) => {
+                        if (e.target.files && e.target.files[0]) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                // 如果当前没有选中图层，使用最后一个图层
+                                if (!currentLayer && layers.length > 0) {
+                                    currentLayer = layers[layers.length - 1];
+                                }
+
+                                if (currentLayer) {
+                                    currentLayer.image = event.target.result;
+                                    renderLayers();
+                                    renderLayersList();
+                                    statusBar.textContent = `图片已添加到图层 ${currentLayer.name}`;
+                                }
+                            };
+                            reader.readAsDataURL(e.target.files[0]);
+                        }
+                    };
+
+                    document.body.appendChild(input);
+                    input.click();
+                    document.body.removeChild(input);
+                }
+            });
+
+            // 添加文本框
+            addTextBtn.addEventListener('click', () => {
+                isAddingText = true;
+                isDrawing = false;
+                isAddingArrow = false;
+                statusBar.textContent = '文本框模式：点击图片位置添加文本框';
+            });
+
+            // 添加双向箭头
+            addArrowBtn.addEventListener('click', () => {
+                isAddingArrow = true;
+                isDrawing = false;
+                isAddingText = false;
+                arrowStartPoint = null;
+                statusBar.textContent = '双向箭头模式：点击图片选择起点';
+            });
+
+            // 在图片上标记点（精确坐标系统）
+            overlayCanvas.addEventListener('click', (e) => {
+                if (!originalImage) return;
+
+                // 获取点击位置相对于Canvas的位置
+                const rect = overlayCanvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // 计算在图片上的实际坐标（以图片左上角为原点）
+                if (mouseX < imageDisplayRect.x ||
+                    mouseX > imageDisplayRect.x + imageDisplayRect.width ||
+                    mouseY < imageDisplayRect.y ||
+                    mouseY > imageDisplayRect.y + imageDisplayRect.height) {
+                    return; // 点击在图片外部
+                }
+
+                // 计算在原始图片上的坐标
+                const imgX = (mouseX - imageDisplayRect.x) / imageDisplayRect.scale;
+                const imgY = (mouseY - imageDisplayRect.y) / imageDisplayRect.scale;
+
+                // 处理文本框添加
+                if (isAddingText) {
+                    addTextBox(imgX, imgY);
+                    return;
+                }
+
+                // 处理箭头添加
+                if (isAddingArrow) {
+                    handleArrowClick(imgX, imgY);
+                    return;
+                }
+
+                // 点标注模式
+                if (isDrawing) {
+                    // 添加点到数组
+                    points.push({ x: imgX, y: imgY });
+
+                    // 绘制点
+                    drawPoints();
+
+                    // 更新坐标列表
+                    updateCoordinatesList();
+
+                    // 更新按钮状态
+                    updateButtonStates();
+
+                    statusBar.textContent = `已添加点 ${points.length}，继续添加点或点击"完成图层"`;
+                }
+            });
+
+            // 添加文本框
+            function addTextBox(x, y) {
+                const textId = `text-${nextTextId++}`;
+                const displayX = imageDisplayRect.x + x * imageDisplayRect.scale;
+                const displayY = imageDisplayRect.y + y * imageDisplayRect.scale;
+
+                const textBox = document.createElement('div');
+                textBox.className = 'text-box';
+                textBox.id = textId;
+                textBox.style.left = `${displayX}px`;
+                textBox.style.top = `${displayY}px`;
+
+                const textArea = document.createElement('textarea');
+                textArea.className = 'text-edit';
+                textArea.value = '双击编辑文本';
+                textArea.rows = 2;
+                textArea.cols = 15;
+                textArea.style.fontSize = '14px'; // 默认字体大小
+
+                const deleteBtn = document.createElement('div');
+                deleteBtn.className = 'text-delete';
+                deleteBtn.innerHTML = '×';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    textBox.remove();
+                    textAnnotations = textAnnotations.filter(t => t.id !== textId);
+                };
+
+                // 字体大小控制按钮
+                const fontControls = document.createElement('div');
+                fontControls.className = 'font-controls';
+
+                const increaseBtn = document.createElement('button');
+                increaseBtn.className = 'font-btn';
+                increaseBtn.innerHTML = '+';
+                increaseBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const currentSize = parseInt(textArea.style.fontSize) || 14;
+                    textArea.style.fontSize = (currentSize + 2) + 'px';
+                    const annotation = textAnnotations.find(t => t.id === textId);
+                    if (annotation) {
+                        annotation.fontSize = currentSize + 2;
+                    }
+                };
+
+                const decreaseBtn = document.createElement('button');
+                decreaseBtn.className = 'font-btn';
+                decreaseBtn.innerHTML = '-';
+                decreaseBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const currentSize = parseInt(textArea.style.fontSize) || 14;
+                    if (currentSize > 10) {
+                        textArea.style.fontSize = (currentSize - 2) + 'px';
+                        const annotation = textAnnotations.find(t => t.id === textId);
+                        if (annotation) {
+                            annotation.fontSize = currentSize - 2;
+                        }
+                    }
+                };
+
+                fontControls.appendChild(increaseBtn);
+                fontControls.appendChild(decreaseBtn);
+                textBox.appendChild(fontControls);
+                textBox.appendChild(textArea);
+                textBox.appendChild(deleteBtn);
+                imageContainer.appendChild(textBox);
+
+                // 保存文本框信息
+                textAnnotations.push({
+                    id: textId,
+                    x: x,
+                    y: y,
+                    text: '双击编辑文本',
+                    fontSize: 14 // 默认字体大小
+                });
+
+                // 设置文本框事件
+                setupTextBoxEvents(textBox, textId);
+
+                // 完成添加
+                isAddingText = false;
+                statusBar.textContent = '文本框已添加，可继续添加或选择其他工具';
+            }
+
+            // 设置文本框事件
+            function setupTextBoxEvents(textBox, textId) {
+                const textArea = textBox.querySelector('.text-edit');
+                const fontControls = textBox.querySelector('.font-controls');
+
+                // 双击编辑
+                textBox.ondblclick = (e) => {
+                    e.stopPropagation();
+                    textArea.focus();
+                    textArea.select();
+                };
+
+                // 文本更新
+                textArea.oninput = () => {
+                    const annotation = textAnnotations.find(t => t.id === textId);
+                    if (annotation) {
+                        annotation.text = textArea.value;
+                    }
+                };
+
+                // 开始拖动
+                textBox.onmousedown = (e) => {
+                    e.preventDefault();
+                    isDraggingText = true;
+                    draggedTextId = textId;
+                    dragStart.x = e.clientX;
+                    dragStart.y = e.clientY;
+
+                    // 设置活动文本框
+                    activeTextBox = textBox;
+                    document.querySelectorAll('.text-box').forEach(box => {
+                        if (box !== textBox) {
+                            box.style.zIndex = 30;
+                        }
+                    });
+                    textBox.style.zIndex = 40;
+                };
+            }
+
+            // 处理箭头点击
+            function handleArrowClick(x, y) {
+                if (!arrowStartPoint) {
+                    // 第一次点击 - 设置起点
+                    arrowStartPoint = { x, y };
+                    statusBar.textContent = '已选择起点，请点击选择终点';
+                } else {
+                    // 第二次点击 - 创建箭头
+                    const arrowId = `arrow-${nextArrowId++}`;
+                    arrowAnnotations.push({
+                        id: arrowId,
+                        start: arrowStartPoint,
+                        end: { x, y }
+                    });
+
+                    // 渲染箭头
+                    renderAnnotations();
+
+                    // 重置状态
+                    arrowStartPoint = null;
+                    isAddingArrow = false;
+                    statusBar.textContent = '双向箭头已添加，可继续添加或选择其他工具';
+                }
+            }
+
+            // 渲染所有标注（文本和箭头）
+            function renderAnnotations() {
+                // 清除现有文本框（除了当前正在拖动的）
+                document.querySelectorAll('.text-box').forEach(box => {
+                    if (box !== activeTextBox) {
+                        box.remove();
+                    }
+                });
+
+                // 重新渲染所有文本框
+                textAnnotations.forEach(annotation => {
+                    if (annotation.id !== (draggedTextId || '')) {
+                        const displayX = imageDisplayRect.x + annotation.x * imageDisplayRect.scale;
+                        const displayY = imageDisplayRect.y + annotation.y * imageDisplayRect.scale;
+
+                        const textBox = document.createElement('div');
+                        textBox.className = 'text-box';
+                        textBox.id = annotation.id;
+                        textBox.style.left = `${displayX}px`;
+                        textBox.style.top = `${displayY}px`;
+
+                        const textArea = document.createElement('textarea');
+                        textArea.className = 'text-edit';
+                        textArea.value = annotation.text;
+                        textArea.rows = 2;
+                        textArea.cols = 15;
+                        textArea.style.fontSize = (annotation.fontSize || 14) + 'px';
+
+                        const deleteBtn = document.createElement('div');
+                        deleteBtn.className = 'text-delete';
+                        deleteBtn.innerHTML = '×';
+                        deleteBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            textBox.remove();
+                            textAnnotations = textAnnotations.filter(t => t.id !== annotation.id);
+                        };
+
+                        // 字体大小控制按钮
+                        const fontControls = document.createElement('div');
+                        fontControls.className = 'font-controls';
+
+                        const increaseBtn = document.createElement('button');
+                        increaseBtn.className = 'font-btn';
+                        increaseBtn.innerHTML = '+';
+                        increaseBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            const currentSize = parseInt(textArea.style.fontSize) || 14;
+                            textArea.style.fontSize = (currentSize + 2) + 'px';
+                            annotation.fontSize = currentSize + 2;
+                        };
+
+                        const decreaseBtn = document.createElement('button');
+                        decreaseBtn.className = 'font-btn';
+                        decreaseBtn.innerHTML = '-';
+                        decreaseBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            const currentSize = parseInt(textArea.style.fontSize) || 14;
+                            if (currentSize > 10) {
+                                textArea.style.fontSize = (currentSize - 2) + 'px';
+                                annotation.fontSize = currentSize - 2;
+                            }
+                        };
+
+                        fontControls.appendChild(increaseBtn);
+                        fontControls.appendChild(decreaseBtn);
+                        textBox.appendChild(fontControls);
+                        textBox.appendChild(textArea);
+                        textBox.appendChild(deleteBtn);
+                        imageContainer.appendChild(textBox);
+
+                        setupTextBoxEvents(textBox, annotation.id);
+                    }
+                });
+
+                // 在Canvas上渲染箭头
+                overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                drawPoints(); // 重新绘制点
+
+                arrowAnnotations.forEach(arrow => {
+                    drawArrow(overlayCtx, arrow.start, arrow.end);
+                });
+
+                // 如果正在添加箭头且有起点，绘制临时箭头
+                if (isAddingArrow && arrowStartPoint) {
+                    const rect = overlayCanvas.getBoundingClientRect();
+                    const mouseX = arrowStartPoint.x * imageDisplayRect.scale + imageDisplayRect.x;
+                    const mouseY = arrowStartPoint.y * imageDisplayRect.scale + imageDisplayRect.y;
+
+                    drawArrow(overlayCtx, arrowStartPoint, {
+                        x: (lastMouseX - imageDisplayRect.x) / imageDisplayRect.scale,
+                        y: (lastMouseY - imageDisplayRect.y) / imageDisplayRect.scale
+                    });
+                }
+            }
+
+            // 绘制双向箭头
+            function drawArrow(ctx, start, end) {
+                const startX = imageDisplayRect.x + start.x * imageDisplayRect.scale;
+                const startY = imageDisplayRect.y + start.y * imageDisplayRect.scale;
+                const endX = imageDisplayRect.x + end.x * imageDisplayRect.scale;
+                const endY = imageDisplayRect.y + end.y * imageDisplayRect.scale;
+
+                // 绘制直线
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.strokeStyle = '#FF9800';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // 计算角度
+                const angle = Math.atan2(endY - startY, endX - startX);
+                const arrowLength = 15;
+
+                // 绘制起点箭头
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(
+                    startX + arrowLength * Math.cos(angle - Math.PI/6),
+                    startY + arrowLength * Math.sin(angle - Math.PI/6)
+                );
+                ctx.lineTo(
+                    startX + arrowLength * Math.cos(angle + Math.PI/6),
+                    startY + arrowLength * Math.sin(angle + Math.PI/6)
+                );
+                ctx.closePath();
+                ctx.fillStyle = '#FF9800';
+                ctx.fill();
+
+                // 绘制终点箭头
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(
+                    endX - arrowLength * Math.cos(angle - Math.PI/6),
+                    endY - arrowLength * Math.sin(angle - Math.PI/6)
+                );
+                ctx.lineTo(
+                    endX - arrowLength * Math.cos(angle + Math.PI/6),
+                    endY - arrowLength * Math.sin(angle + Math.PI/6)
+                );
+                ctx.closePath();
+                ctx.fillStyle = '#FF9800';
+                ctx.fill();
+            }
+
+            // 跟踪鼠标位置
+            let lastMouseX = 0;
+            let lastMouseY = 0;
+
+            overlayCanvas.addEventListener('mousemove', (e) => {
+                const rect = overlayCanvas.getBoundingClientRect();
+                lastMouseX = e.clientX - rect.left;
+                lastMouseY = e.clientY - rect.top;
+
+                // 更新状态栏坐标显示
+                if (originalImage) {
+                    const imgX = Math.round((lastMouseX - imageDisplayRect.x) / imageDisplayRect.scale);
+                    const imgY = Math.round((lastMouseY - imageDisplayRect.y) / imageDisplayRect.scale);
+
+                    if (imgX >= 0 && imgX <= originalImage.width &&
+                        imgY >= 0 && imgY <= originalImage.height) {
+                        statusBar.textContent = `坐标: (${imgX}, ${imgY})`;
+                    }
+                }
+
+                // 如果正在添加箭头且有起点，重绘临时箭头
+                if (isAddingArrow && arrowStartPoint) {
+                    renderAnnotations();
+                }
+
+                // 处理文本框拖动
+                if (isDraggingText && draggedTextId) {
+                    const textBox = document.getElementById(draggedTextId);
+                    if (textBox) {
+                        const dx = e.clientX - dragStart.x;
+                        const dy = e.clientY - dragStart.y;
+
+                        const currentLeft = parseInt(textBox.style.left) || 0;
+                        const currentTop = parseInt(textBox.style.top) || 0;
+
+                        textBox.style.left = `${currentLeft + dx}px`;
+                        textBox.style.top = `${currentTop + dy}px`;
+
+                        // 更新文本框位置信息
+                        const annotation = textAnnotations.find(t => t.id === draggedTextId);
+                        if (annotation) {
+                            // 转换为原始图片坐标
+                            const imgX = (parseInt(textBox.style.left) - imageDisplayRect.x) / imageDisplayRect.scale;
+                            const imgY = (parseInt(textBox.style.top) - imageDisplayRect.y) / imageDisplayRect.scale;
+
+                            annotation.x = imgX;
+                            annotation.y = imgY;
+                        }
+
+                        dragStart.x = e.clientX;
+                        dragStart.y = e.clientY;
+                    }
+                }
+            });
+
+            // 鼠标释放事件
+            document.addEventListener('mouseup', () => {
+                isDraggingText = false;
+                draggedTextId = null;
+            });
+
+            // 绘制点
+            function drawPoints() {
+                overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                overlayCtx.save();
+                overlayCtx.translate(offsetX, offsetY);
+                overlayCtx.scale(scale, scale);
+
+                if (points.length === 0) return;
+
+                // 绘制所有点（转换为canvas坐标）
+                points.forEach((point, index) => {
+                    // 转换为显示坐标
+                    const displayX = imageDisplayRect.x + point.x * imageDisplayRect.scale;
+                    const displayY = imageDisplayRect.y + point.y * imageDisplayRect.scale;
+
+                    // 绘制点
+                    overlayCtx.beginPath();
+                    overlayCtx.arc(displayX, displayY, 6, 0, Math.PI * 2);
+                    overlayCtx.fillStyle = '#ff5252';
+                    overlayCtx.fill();
+
+                    // 绘制序号
+                    overlayCtx.font = 'bold 14px Arial';
+                    overlayCtx.fillStyle = 'white';
+                    overlayCtx.textAlign = 'center';
+                    overlayCtx.textBaseline = 'middle';
+                    overlayCtx.fillText(index + 1, displayX, displayY);
+                });
+
+                // 连接点
+                if (points.length > 1) {
+                    overlayCtx.beginPath();
+
+                    // 第一个点
+                    const firstPoint = points[0];
+                    const firstX = imageDisplayRect.x + firstPoint.x * imageDisplayRect.scale;
+                    const firstY = imageDisplayRect.y + firstPoint.y * imageDisplayRect.scale;
+                    overlayCtx.moveTo(firstX, firstY);
+
+                    // 后续点
+                    for (let i = 1; i < points.length; i++) {
+                        const point = points[i];
+                        const displayX = imageDisplayRect.x + point.x * imageDisplayRect.scale;
+                        const displayY = imageDisplayRect.y + point.y * imageDisplayRect.scale;
+                        overlayCtx.lineTo(displayX, displayY);
+                    }
+
+                    overlayCtx.strokeStyle = 'rgba(86, 171, 47, 0.8)';
+                    overlayCtx.lineWidth = 2;
+                    overlayCtx.stroke();
+
+                    // 如果绘制完成，连接首尾点
+                    if (points.length >= 3) {
+                        overlayCtx.beginPath();
+                        const lastPoint = points[points.length - 1];
+                        const lastX = imageDisplayRect.x + lastPoint.x * imageDisplayRect.scale;
+                        const lastY = imageDisplayRect.y + lastPoint.y * imageDisplayRect.scale;
+                        overlayCtx.moveTo(lastX, lastY);
+                        overlayCtx.lineTo(firstX, firstY);
+                        overlayCtx.stroke();
+                    }
+                }
+
+                overlayCtx.restore();
+            }
+
+            // 更新坐标列表
+            function updateCoordinatesList() {
+                coordinatesList.innerHTML = '';
+                points.forEach((point, index) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>点 ${index + 1}:</span>
+                        <span>(${Math.round(point.x)}, ${Math.round(point.y)})</span>
+                    `;
+                    coordinatesList.appendChild(li);
+                });
+            }
+
+            // 渲染图层列表
+            function renderLayersList() {
+                if (layers.length === 0) {
+                    layersContainer.innerHTML = '<p>尚未创建图层</p>';
+                    return;
+                }
+
+                layersContainer.innerHTML = '';
+
+                layers.forEach((layer, index) => {
+                    const layerElement = document.createElement('div');
+                    layerElement.className = 'layer-item';
+                    layerElement.innerHTML = `
+                        <div class="layer-header">
+                            <div class="layer-title">${layer.name}</div>
+                            <button class="btn-red delete-layer" data-id="${layer.id}">删除</button>
+                        </div>
+                        <div>包含 ${layer.points.length} 个点</div>
+                        <input type="text" class="layer-name-input" value="${layer.name}" placeholder="输入图层名称" data-id="${layer.id}">
+                        ${layer.image ? `<img src="${layer.image}" class="layer-image" alt="图层图片">` : '<div>未添加图片</div>'}
+                        <div style="margin-top:10px;">
+                            <button class="select-layer" data-id="${layer.id}">选择此图层</button>
+                        </div>
+                    `;
+
+                    layersContainer.appendChild(layerElement);
+                });
+
+                // 添加删除事件
+                document.querySelectorAll('.delete-layer').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        layers = layers.filter(layer => layer.id !== id);
+                        renderLayersList();
+                        renderLayers();
+                        updateButtonStates();
+                        statusBar.textContent = '图层已删除';
+
+                        if (layers.length === 0) {
+                            layerInfo.innerHTML = '尚未创建图层';
+                        }
+                    });
+                });
+
+                // 添加选择图层事件
+                document.querySelectorAll('.select-layer').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        currentLayer = layers.find(layer => layer.id === id);
+                        layerInfo.innerHTML = `当前图层：${currentLayer.name}<br>包含 ${currentLayer.points.length} 个点`;
+                        statusBar.textContent = `已选择图层 ${currentLayer.name}`;
+                    });
+                });
+
+                // 添加图层名称修改事件
+                document.querySelectorAll('.layer-name-input').forEach(input => {
+                    input.addEventListener('change', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        const newName = e.target.value;
+                        const layer = layers.find(layer => layer.id === id);
+                        if (layer) {
+                            layer.name = newName;
+                            if (currentLayer && currentLayer.id === id) {
+                                layerInfo.innerHTML = `当前图层：${newName}<br>包含 ${layer.points.length} 个点`;
+                            }
+                            renderLayersList();
+                        }
+                    });
+                });
+            }
+
+            // 渲染所有图层
+            function renderLayers() {
+                layersCtx.clearRect(0, 0, layersCanvas.width, layersCanvas.height);
+                layersCtx.save();
+                layersCtx.translate(offsetX, offsetY);
+                layersCtx.scale(scale, scale);
+
+                layers.forEach(layer => {
+                    // 绘制多边形
+                    if (layer.points.length > 0) {
+                        layersCtx.beginPath();
+
+                        // 第一个点
+                        const firstPoint = layer.points[0];
+                        const firstX = imageDisplayRect.x + firstPoint.x * imageDisplayRect.scale;
+                        const firstY = imageDisplayRect.y + firstPoint.y * imageDisplayRect.scale;
+                        layersCtx.moveTo(firstX, firstY);
+
+                        // 后续点
+                        for (let i = 1; i < layer.points.length; i++) {
+                            const point = layer.points[i];
+                            const displayX = imageDisplayRect.x + point.x * imageDisplayRect.scale;
+                            const displayY = imageDisplayRect.y + point.y * imageDisplayRect.scale;
+                            layersCtx.lineTo(displayX, displayY);
+                        }
+
+                        layersCtx.closePath();
+
+                        // 如果有图片，绘制图片
+                        if (layer.image) {
+                            const img = new Image();
+                            img.src = layer.image;
+
+                            // 计算多边形边界（在显示坐标系中）
+                            const minX = Math.min(...layer.points.map(p =>
+                                imageDisplayRect.x + p.x * imageDisplayRect.scale));
+                            const maxX = Math.max(...layer.points.map(p =>
+                                imageDisplayRect.x + p.x * imageDisplayRect.scale));
+                            const minY = Math.min(...layer.points.map(p =>
+                                imageDisplayRect.y + p.y * imageDisplayRect.scale));
+                            const maxY = Math.max(...layer.points.map(p =>
+                                imageDisplayRect.y + p.y * imageDisplayRect.scale));
+                            const width = maxX - minX;
+                            const height = maxY - minY;
+
+                            // 使用clip裁剪到多边形
+                            layersCtx.save();
+                            layersCtx.clip();
+
+                            // 绘制图片
+                            layersCtx.drawImage(img, minX, minY, width, height);
+
+                            layersCtx.restore();
+                        }
+
+                        // 绘制边框
+                        layersCtx.strokeStyle = layer === currentLayer ? '#ff5252' : '#6dd5ed';
+                        layersCtx.lineWidth = 2;
+                        layersCtx.stroke();
+
+                        // 绘制参考点（第一个点）
+                        layersCtx.beginPath();
+                        layersCtx.arc(firstX, firstY, 8, 0, Math.PI * 2);
+                        layersCtx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+                        layersCtx.fill();
+
+                        // 绘制参考点标记
+                        layersCtx.font = 'bold 14px Arial';
+                        layersCtx.fillStyle = 'black';
+                        layersCtx.textAlign = 'center';
+                        layersCtx.textBaseline = 'middle';
+                        layersCtx.fillText('R', firstX, firstY);
+                    }
+                });
+
+                layersCtx.restore();
+                renderLayersList();
+            }
+
+            // 导出CSV - 修复：导出所有点
+            exportCsvBtn.addEventListener('click', () => {
+                if (layers.length === 0) return;
+
+                let csvContent = 'segment_name,point_index,x,y\n';
+
+                layers.forEach(layer => {
+                    layer.points.forEach((point, index) => {
+                        csvContent += `${layer.name},${index + 1},${Math.round(point.x)},${Math.round(point.y)}\n`;
+                    });
+                });
+
+                // 创建下载链接
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'segments.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                statusBar.textContent = 'CSV文件已导出';
+            });
+
+            // 导出标注图 - 修复：所有图层正常显示
+            exportImageBtn.addEventListener('click', () => {
+                if (layers.length === 0 || !originalImage) return;
+
+                // 创建一个临时Canvas来绘制最终结果
+                const exportCanvas = document.createElement('canvas');
+                const exportCtx = exportCanvas.getContext('2d');
+
+                // 设置Canvas大小为原始图片大小
+                exportCanvas.width = originalImage.width;
+                exportCanvas.height = originalImage.height;
+
+                // 绘制原始图片
+                exportCtx.drawImage(originalImage, 0, 0);
+
+                // 设置样式
+                exportCtx.lineWidth = 20; // 更粗的边框
+                exportCtx.strokeStyle = 'red';  // 红色边框
+                exportCtx.setLineDash([8, 4]);  // 虚线样式（8像素实线，4像素空白）
+                exportCtx.fillStyle = 'white';  // 纯白不透明填充
+                exportCtx.font = 'bold 16px Arial';
+                exportCtx.textAlign = 'center';
+                exportCtx.textBaseline = 'middle';
+
+                // 绘制所有图层
+                layers.forEach(layer => {
+                    if (layer.points.length > 0) {
+                        // 绘制多边形
+                        exportCtx.beginPath();
+
+                        // 第一个点
+                        const firstPoint = layer.points[0];
+                        exportCtx.moveTo(firstPoint.x, firstPoint.y);
+
+                        // 后续点
+                        for (let i = 1; i < layer.points.length; i++) {
+                            const point = layer.points[i];
+                            exportCtx.lineTo(point.x, point.y);
+                        }
+
+                        exportCtx.closePath();
+
+                        // 填充纯白不透明背景
+                        exportCtx.stroke();
+                        exportCtx.fill();
+                    }
+                });
+
+                // 绘制箭头（在图层之上）
+                arrowAnnotations.forEach(arrow => {
+                    // 绘制直线
+                    exportCtx.beginPath();
+                    exportCtx.moveTo((arrow.start.x + 10), (arrow.start.y + 10));
+                    exportCtx.lineTo((arrow.end.x - 10), (arrow.end.y - 10));
+                    exportCtx.setLineDash([8, 1]);  // 虚线样式（8像素实线，4像素空白）
+                    exportCtx.strokeStyle = 'blue';
+                    exportCtx.lineWidth = 10;
+                    exportCtx.stroke();
+
+                    // 计算角度
+                    const angle = Math.atan2(arrow.end.y - arrow.start.y, arrow.end.x - arrow.start.x);
+                    const arrowLength = 50;
+
+                    // 绘制起点箭头
+                    exportCtx.beginPath();
+                    exportCtx.moveTo(arrow.start.x, arrow.start.y);
+                    exportCtx.lineTo(
+                        arrow.start.x + arrowLength * Math.cos(angle - Math.PI/6),
+                        arrow.start.y + arrowLength * Math.sin(angle - Math.PI/6)
+                    );
+                    exportCtx.lineTo(
+                        arrow.start.x + arrowLength * Math.cos(angle + Math.PI/6),
+                        arrow.start.y + arrowLength * Math.sin(angle + Math.PI/6)
+                    );
+                    exportCtx.closePath();
+                    exportCtx.fillStyle = 'blue';
+                    exportCtx.fill();
+
+                    // 绘制终点箭头
+                    exportCtx.beginPath();
+                    exportCtx.moveTo(arrow.end.x, arrow.end.y);
+                    exportCtx.lineTo(
+                        arrow.end.x - arrowLength * Math.cos(angle - Math.PI/6),
+                        arrow.end.y - arrowLength * Math.sin(angle - Math.PI/6)
+                    );
+                    exportCtx.lineTo(
+                        arrow.end.x - arrowLength * Math.cos(angle + Math.PI/6),
+                        arrow.end.y - arrowLength * Math.sin(angle + Math.PI/6)
+                    );
+                    exportCtx.closePath();
+                    exportCtx.fillStyle = 'blue';
+                    exportCtx.fill();
+                });
+
+                // 绘制文本框（在图层和箭头之上）
+                textAnnotations.forEach(text => {
+                    const fontSize = (text.fontSize + 60);
+                    exportCtx.fillStyle = 'rgba(255, 255, 255, 1)';
+                    exportCtx.font = `${fontSize}px Arial`;
+                    const textWidth = exportCtx.measureText(text.text).width;
+                    exportCtx.fillRect(text.x, text.y - fontSize - 5, textWidth + 10, fontSize + 10);
+                    exportCtx.fillStyle = 'black';
+                    exportCtx.font = `${fontSize}px Arial`;
+                    exportCtx.textAlign = 'left';
+                    exportCtx.textBaseline = 'top';
+                    exportCtx.fillText(text.text, text.x + 5, text.y - fontSize - 2);
+                });
+
+                // 创建下载链接
+                const dataUrl = exportCanvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'annotated_image.png';
+                link.click();
+
+                statusBar.textContent = '标注图片已导出';
+            });
+
+            // 缩放功能
+            zoomInBtn.addEventListener('click', () => {
+                scale = Math.min(scale * 1.2, 5);
+                renderAll();
+                statusBar.textContent = `放大: ${Math.round(scale * 100)}%`;
+            });
+
+            zoomOutBtn.addEventListener('click', () => {
+                scale = Math.max(scale * 0.8, 0.5);
+                renderAll();
+                statusBar.textContent = `缩小: ${Math.round(scale * 100)}%`;
+            });
+
+            resetZoomBtn.addEventListener('click', () => {
+                scale = 1.0;
+                offsetX = 0;
+                offsetY = 0;
+                renderAll();
+                statusBar.textContent = '缩放已重置';
+            });
+
+            // 渲染所有内容
+            function renderAll() {
+                setCanvasSize();
+                drawPoints();
+                renderLayers();
+                renderAnnotations();
+            }
+
+            // 初始化
+            setCanvasSize();
+            updateButtonStates();
+        });
+    </script>
+</body>
+</html>
